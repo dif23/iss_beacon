@@ -1,10 +1,6 @@
-import json
-import urllib.request
-import math
-import turtle
-import time
+import json, urllib.request, math, turtle, time
 
-# Haversine formula to calculate the great-circle distance between two points
+# Haversine formula
 def haversine(lat_1, long_1, lat_2, lon_2):
     R = 6371  # Radius of Earth in kilometers
 
@@ -40,7 +36,7 @@ def iss_distance():
     # Calculate distance
     distance = haversine(home_lat, home_long, iss_lat, iss_long)
 
-    # Normalize the distance to get the distance ratio (value between 0 and 1)
+    # Distance ratio
     max_distance = 20015  # Approximate maximum distance (half the Earth's circumference)
     distance_ratio = min(distance / max_distance, 1)  # Ensure ratio doesn't exceed 1
 
@@ -48,12 +44,12 @@ def iss_distance():
 
 # Map ISS distance to RGB color
 def color_map(distance_ratio):
-    # Define the start, middle, and end RGB values
+    # Color gradient
     pink = (255, 0, 50)
     purple = (128, 0, 128)
     light_blue = (173, 216, 230)
 
-    # Interpolate RGB values based on distance ratio
+    # Interpolate RGB values with distance ratio
     if distance_ratio < 0.5:
         r = int((1 - distance_ratio * 2) * pink[0] + (distance_ratio * 2) * purple[0])
         g = int((1 - distance_ratio * 2) * pink[1] + (distance_ratio * 2) * purple[1])
@@ -63,38 +59,36 @@ def color_map(distance_ratio):
         g = int((1 - (distance_ratio - 0.5) * 2) * purple[1] + ((distance_ratio - 0.5) * 2) * light_blue[1])
         b = int((1 - (distance_ratio - 0.5) * 2) * purple[2] + ((distance_ratio - 0.5) * 2) * light_blue[2])
 
-    # Return the resulting RGB value
     return (r, g, b)
 
-# Open Turtle screen and update background color based on ISS distance
+# Display in turtle screen
 def launch_beacon():
-    # Setup the Turtle screen
+
     screen = turtle.Screen()
     screen.setup(width=600, height=600)
     screen.bgcolor("white")
 
-    # Create a Turtle object for displaying the text
+
     text_turtle = turtle.Turtle()
-    text_turtle.hideturtle()  # Hide the turtle cursor
-    text_turtle.penup()  # Don't draw lines
-    text_turtle.goto(0, 0)  # Position the text in the center
+    text_turtle.hideturtle() 
+    text_turtle.penup() 
+    text_turtle.goto(0, 0)
 
     while True:
-        # Get the distance ratio and color based on the ISS distance
+    
+        # Fetch distance ratio and color based from ISS distance
         distance, distance_ratio = iss_distance()
         rgb_value = color_map(distance_ratio)
 
-        # Convert the RGB value to a string that Turtle can use for bgcolor
+        # Convert  RGB value to string for Turtle bgcolor
         screen.bgcolor(f"#{rgb_value[0]:02x}{rgb_value[1]:02x}{rgb_value[2]:02x}")
 
-        # Clear the previous text
+        # Clear previous text
         text_turtle.clear()
 
-        # Write the new text in the middle of the screen
+        # Write new text
         text_turtle.write(f"ISS Distance to Home: {distance:.2f} km", align="center", font=("Arial", 16, "normal"))
 
-        # Wait for 5 seconds before updating the color and text
         time.sleep(5)
 
-# Start the Turtle screen update loop
 launch_beacon()
