@@ -1,0 +1,100 @@
+import json
+import urllib.request
+import math
+import turtle
+import time
+
+# Haversine formula to calculate the great-circle distance between two points
+def haversine(lat_1, long_1, lat_2, lon_2):
+    R = 6371  # Radius of Earth in kilometers
+
+    # Convert degrees to radians
+    lat_1, long_1, lat_2, lon_2 = map(math.radians, [lat_1, long_1, lat_2, lon_2])
+
+    # Differences in coordinates
+    dlat = lat_2 - lat_1
+    dlong = lon_2 - long_1
+
+    # Haversine formula
+    a = math.sin(dlat / 2)**2 + math.cos(lat_1) * math.cos(lat_2) * math.sin(dlong / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c  # Distance in kilometers
+    return distance
+
+# Fetch ISS location and calculate distance
+def iss_distance():
+    # Fetch ISS location
+    iss_url = 'http://api.open-notify.org/iss-now.json'
+    response = urllib.request.urlopen(iss_url)
+    iss_data = json.loads(response.read())
+
+    # Extract ISS location
+    iss_lat = float(iss_data['iss_position']['latitude'])
+    iss_long = float(iss_data['iss_position']['longitude'])
+
+    # Home location
+    home_lat = 40.6869227493006
+    home_long = -73.97659179765606
+
+    # Calculate distance
+    distance = haversine(home_lat, home_long, iss_lat, iss_long)
+
+    # Normalize the distance to get the distance ratio (value between 0 and 1)
+    max_distance = 20015  # Approximate maximum distance (half the Earth's circumference)
+    distance_ratio = min(distance / max_distance, 1)  # Ensure ratio doesn't exceed 1
+
+    return distance, distance_ratio
+
+# Map ISS distance to RGB color
+def color_map(distance_ratio):
+    # Define the start, middle, and end RGB values
+    pink = (255, 0, 50)
+    purple = (128, 0, 128)
+    light_blue = (173, 216, 230)
+
+    # Interpolate RGB values based on distance ratio
+    if distance_ratio < 0.5:
+        r = int((1 - distance_ratio * 2) * pink[0] + (distance_ratio * 2) * purple[0])
+        g = int((1 - distance_ratio * 2) * pink[1] + (distance_ratio * 2) * purple[1])
+        b = int((1 - distance_ratio * 2) * pink[2] + (distance_ratio * 2) * purple[2])
+    else:
+        r = int((1 - (distance_ratio - 0.5) * 2) * purple[0] + ((distance_ratio - 0.5) * 2) * light_blue[0])
+        g = int((1 - (distance_ratio - 0.5) * 2) * purple[1] + ((distance_ratio - 0.5) * 2) * light_blue[1])
+        b = int((1 - (distance_ratio - 0.5) * 2) * purple[2] + ((distance_ratio - 0.5) * 2) * light_blue[2])
+
+    # Return the resulting RGB value
+    return (r, g, b)
+
+# Open Turtle screen and update background color based on ISS distance
+def launch_beacon():
+    # Setup the Turtle screen
+    screen = turtle.Screen()
+    screen.setup(width=600, height=600)
+    screen.bgcolor("white")
+
+    # Create a Turtle object for displaying the text
+    text_turtle = turtle.Turtle()
+    text_turtle.hideturtle()  # Hide the turtle cursor
+    text_turtle.penup()  # Don't draw lines
+    text_turtle.goto(0, 0)  # Position the text in the center
+
+    while True:
+        # Get the distance ratio and color based on the ISS distance
+        distance, distance_ratio = iss_distance()
+        rgb_value = color_map(distance_ratio)
+
+        # Convert the RGB value to a string that Turtle can use for bgcolor
+        screen.bgcolor(f"#{rgb_value[0]:02x}{rgb_value[1]:02x}{rgb_value[2]:02x}")
+
+        # Clear the previous text
+        text_turtle.clear()
+
+        # Write the new text in the middle of the screen
+        text_turtle.write(f"ISS Distance to Home: {distance:.2f} km", align="center", font=("Arial", 16, "normal"))
+
+        # Wait for 5 seconds before updating the color and text
+        time.sleep(5)
+
+# Start the Turtle screen update loop
+launch_beacon()
